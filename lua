@@ -1,158 +1,283 @@
--- ===============================
--- AUTO MOREIRA - LYN0X HUB
--- ===============================
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lynox Hub - Panel Admin con Key System</title>
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #e0e0ff;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .container {
+      background: rgba(30, 30, 60, 0.75);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(100, 100, 255, 0.3);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+    
+    h1 {
+      margin: 0 0 1.8rem;
+      color: #a78bfa;
+      font-size: 2.1rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #c4b5fd;
+    }
+    
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 0.9rem;
+      font-size: 1.1rem;
+      border: 1px solid #4a4a7a;
+      border-radius: 8px;
+      background: rgba(20,20,40,0.8);
+      color: white;
+      outline: none;
+    }
+    
+    input:focus {
+      border-color: #a78bfa;
+      box-shadow: 0 0 0 3px rgba(167,139,250,0.25);
+    }
+    
+    button {
+      background: #7c3aed;
+      color: white;
+      border: none;
+      padding: 0.95rem 2rem;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.25s;
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+    
+    button:hover {
+      background: #9f7aea;
+      transform: translateY(-2px);
+    }
+    
+    .error {
+      color: #ff6b6b;
+      margin: 1rem 0 0;
+      font-size: 0.95rem;
+      display: none;
+    }
+    
+    #admin-content {
+      display: none;
+      margin-top: 2rem;
+      text-align: left;
+    }
+    
+    .status {
+      font-size: 0.95rem;
+      margin-top: 1.5rem;
+      color: #a0a0ff;
+    }
+    
+    .logout {
+      margin-top: 2rem;
+      background: #e11d48;
+      color: white;
+    }
+    
+    .logout:hover {
+      background: #f43f5e;
+    }
+    
+    .key-list {
+      margin-top: 1.5rem;
+      background: rgba(20,20,40,0.8);
+      padding: 1rem;
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .key-item {
+      background: #2a2a5a;
+      padding: 0.6rem;
+      margin: 0.5rem 0;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .delete-key {
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .delete-key:hover {
+      background: #ff8787;
+    }
+  </style>
+</head>
+<body>
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+<div class="container" id="login-container">
+  <h1>Lynox Hub Admin</h1>
+  
+  <div class="form-group">
+    <input type="password" id="password" placeholder="Ingresa la contraseña" autocomplete="off">
+  </div>
+  
+  <button onclick="checkPassword()">Ingresar</button>
+  
+  <div class="error" id="error-msg">Contraseña incorrecta</div>
+  
+  <div class="status" id="status"></div>
+</div>
 
--- ===== GUI =====
-local gui = Instance.new("ScreenGui")
-gui.Name = "AutoMoreiraUI"
-gui.ResetOnSpawn = false
-gui.Parent = player:WaitForChild("PlayerGui")
+<div class="container" id="admin-container" style="display:none;">
+  <h1>Panel de Administración - Key System</h1>
+  <p>Bienvenido, administrador de Lynox Hub.</p>
+  
+  <div id="admin-content">
+    <h3>Generar Nueva Key</h3>
+    
+    <div class="form-group">
+      <label for="user-name">Nombre de Usuario (opcional):</label>
+      <input type="text" id="user-name" placeholder="Ej: usuario123">
+    </div>
+    
+    <button onclick="generateKey()">Generar Key</button>
+    
+    <div id="generated-key" class="status" style="margin-top:1rem;"></div>
+    
+    <h3>Lista de Keys Existentes</h3>
+    <div class="key-list" id="key-list"></div>
+  </div>
+  
+  <button class="logout" onclick="logout()">Cerrar sesión</button>
+</div>
 
--- ===== LOADING =====
-local loading = Instance.new("Frame")
-loading.Parent = gui
-loading.Size = UDim2.new(1,0,1,0)
-loading.BackgroundColor3 = Color3.fromRGB(5,5,5)
+<script>
+  // Contraseña del admin (cámbiala si quieres)
+  const ADMIN_PASSWORD = "AdminLynox2026!";
 
-local box = Instance.new("Frame", loading)
-box.Size = UDim2.new(0,480,0,200)
-box.Position = UDim2.new(0.5,0,0.5,0)
-box.AnchorPoint = Vector2.new(0.5,0.5)
-box.BackgroundColor3 = Color3.fromRGB(10,15,25)
-box.BorderSizePixel = 2
-box.BorderColor3 = Color3.fromRGB(50,130,255)
+  const loginContainer = document.getElementById("login-container");
+  const adminContainer = document.getElementById("admin-container");
+  const errorMsg = document.getElementById("error-msg");
+  const status = document.getElementById("status");
+  const keyList = document.getElementById("key-list");
+  const generatedKeyDisplay = document.getElementById("generated-key");
+  const userNameInput = document.getElementById("user-name");
 
-local title = Instance.new("TextLabel", box)
-title.Size = UDim2.new(1,0,0,30)
-title.BackgroundTransparency = 1
-title.Text = ">> ESPERANDO EL BOT <<"
-title.Font = Enum.Font.Code
-title.TextSize = 18
-title.TextColor3 = Color3.fromRGB(155,220,255)
+  // Cargar keys de localStorage (simulando base de datos local)
+  let keys = JSON.parse(localStorage.getItem("lynoxKeys")) || [];
 
-local timeLabel = Instance.new("TextLabel", box)
-timeLabel.Position = UDim2.new(0,0,0,35)
-timeLabel.Size = UDim2.new(1,0,0,25)
-timeLabel.BackgroundTransparency = 1
-timeLabel.Font = Enum.Font.Code
-timeLabel.TextSize = 16
-timeLabel.TextColor3 = Color3.fromRGB(155,220,255)
-timeLabel.Text = "20s"
+  function checkPassword() {
+    const input = document.getElementById("password").value.trim();
+    
+    if (input === ADMIN_PASSWORD) {
+      localStorage.setItem("isAdmin", "true");
+      localStorage.setItem("adminTime", Date.now());
+      showAdminPanel();
+    } else {
+      errorMsg.style.display = "block";
+      setTimeout(() => { errorMsg.style.display = "none"; }, 3000);
+    }
+  }
 
-local barBg = Instance.new("Frame", box)
-barBg.Position = UDim2.new(0,20,0,80)
-barBg.Size = UDim2.new(1,-40,0,10)
-barBg.BackgroundColor3 = Color3.fromRGB(30,30,30)
+  function showAdminPanel() {
+    loginContainer.style.display = "none";
+    adminContainer.style.display = "block";
+    status.textContent = "Sesión iniciada como administrador";
+    loadKeys();
+  }
 
-local bar = Instance.new("Frame", barBg)
-bar.Size = UDim2.new(1,0,1,0)
-bar.BackgroundColor3 = Color3.fromRGB(50,130,255)
+  function logout() {
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("adminTime");
+    location.reload();
+  }
 
-local loadTxt = Instance.new("TextLabel", box)
-loadTxt.Position = UDim2.new(0,0,0,110)
-loadTxt.Size = UDim2.new(1,0,0,30)
-loadTxt.BackgroundTransparency = 1
-loadTxt.Text = "BUSCANDO BOTS..."
-loadTxt.Font = Enum.Font.Code
-loadTxt.TextSize = 14
-loadTxt.TextColor3 = Color3.fromRGB(111,168,255)
+  function generateKey() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let key = 'LYNOX-';
+    for (let i = 0; i < 12; i++) {
+      key += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    const userName = userNameInput.value.trim() || "Anónimo";
+    
+    keys.push({ key: key, user: userName, created: new Date().toLocaleString() });
+    localStorage.setItem("lynoxKeys", JSON.stringify(keys));
+    
+    generatedKeyDisplay.textContent = `Key generada para ${userName}: ${key}`;
+    userNameInput.value = "";
+    loadKeys();
+  }
 
--- ===== APP =====
-local app = Instance.new("Frame", gui)
-app.Visible = false
-app.Size = UDim2.new(0,380,0,260)
-app.Position = UDim2.new(0.05,0,0.25,0)
-app.BackgroundColor3 = Color3.fromRGB(10,15,25)
+  function loadKeys() {
+    keyList.innerHTML = "";
+    keys.forEach((item, index) => {
+      const div = document.createElement("div");
+      div.className = "key-item";
+      div.innerHTML = `
+        <span>${item.key} - ${item.user} (${item.created})</span>
+        <button class="delete-key" onclick="deleteKey(${index})">Eliminar</button>
+      `;
+      keyList.appendChild(div);
+    });
+  }
 
-local titleApp = Instance.new("TextLabel", app)
-titleApp.Size = UDim2.new(1,0,0,40)
-titleApp.BackgroundTransparency = 1
-titleApp.Text = "Método Moreira Lynox"
-titleApp.Font = Enum.Font.Code
-titleApp.TextSize = 18
-titleApp.TextColor3 = Color3.fromRGB(155,220,255)
+  function deleteKey(index) {
+    keys.splice(index, 1);
+    localStorage.setItem("lynoxKeys", JSON.stringify(keys));
+    loadKeys();
+  }
 
-local button = Instance.new("TextButton", app)
-button.Position = UDim2.new(0,20,0,50)
-button.Size = UDim2.new(1,-40,0,40)
-button.Text = "Iniciar METODO Moreira"
-button.Font = Enum.Font.Code
-button.TextSize = 14
-button.TextColor3 = Color3.new(1,1,1)
-button.BackgroundColor3 = Color3.fromRGB(50,130,255)
+  // Verificar si ya está logueado
+  window.onload = function() {
+    if (localStorage.getItem("isAdmin") === "true") {
+      const time = localStorage.getItem("adminTime");
+      if (Date.now() - time < 2 * 60 * 60 * 1000) {  // 2 horas
+        showAdminPanel();
+      } else {
+        localStorage.clear();
+      }
+    }
+  };
 
-local status = Instance.new("TextLabel", app)
-status.Position = UDim2.new(0,20,0,95)
-status.Size = UDim2.new(1,-40,0,20)
-status.BackgroundTransparency = 1
-status.Font = Enum.Font.Code
-status.TextSize = 13
-status.TextColor3 = Color3.fromRGB(155,220,255)
-status.Text = "Listo para empezar..."
+  // Enter para login
+  document.getElementById("password").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+      checkPassword();
+    }
+  });
+</script>
 
-local console = Instance.new("TextLabel", app)
-console.Position = UDim2.new(0,20,0,125)
-console.Size = UDim2.new(1,-40,0,110)
-console.BackgroundColor3 = Color3.new(0,0,0)
-console.TextWrapped = true
-console.TextYAlignment = Enum.TextYAlignment.Top
-console.TextXAlignment = Enum.TextXAlignment.Left
-console.Font = Enum.Font.Code
-console.TextSize = 11
-console.TextColor3 = Color3.fromRGB(200,200,200)
-console.Text = ""
-
--- ===== LOADING TIMER =====
-for i = 20,0,-1 do
-	timeLabel.Text = i.."s"
-	bar.Size = UDim2.new(i/20,0,1,0)
-	task.wait(1)
-end
-
-loading.Visible = false
-app.Visible = true
-
--- ===== LOGIC =====
-local running = false
-
-local function log(text)
-	console.Text = console.Text .. text .. "\n\n"
-end
-
-button.MouseButton1Click:Connect(function()
-	if running then return end
-	running = true
-
-	button.Text = "STOP"
-	button.BackgroundColor3 = Color3.fromRGB(255,60,60)
-	status.Text = "Ejecutándose..."
-	console.Text = ""
-
-	log("INICIANDO METODO MOREIRA — PREPARANDO SISTEMA, VARIABLES Y CONEXIONES")
-
-	-- 🟡 VERIFICANDO
-	task.spawn(function()
-		for i = 1,10 do
-			if not running then return end
-			log("VERIFICANDO SI TIENES BRAIROTS ARRIBA DE 30 M — ESCANEANDO INVENTARIO, COMPROBANDO VALORES Y VALIDANDO DISPONIBILIDAD")
-			task.wait(1)
-		end
-	end)
-
-	task.delay(10,function()
-		for i = 1,9 do
-			if not running then return end
-			log("EL BOT SE ESTÁ UNIENDO AL SERVIDOR — ESTABLECIENDO CONEXIÓN, SINCRONIZANDO SESIÓN Y PREPARANDO ENTORNO")
-			task.wait(1)
-		end
-
-		log("UNIÉNDOSE BOT A SU SERVER — CONEXIÓN COMPLETADA CORRECTAMENTE")
-		status.Text = "Finalizado"
-		button.Text = "Iniciar METODO Moreira"
-		button.BackgroundColor3 = Color3.fromRGB(50,130,255)
-		running = false
-	end)
-end)
+</body>
+</html>
